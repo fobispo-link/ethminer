@@ -106,9 +106,7 @@ void EthStratumClient::reconnect()
 	}
 
 	m_io_service.reset();
-	if(m_socket){
-	  m_socket.close(); // leads to crashes on Linux
-	}
+	m_socket.close(); // leads to crashes on Linux
 
 	m_authorized = false;
 	m_connected = false;

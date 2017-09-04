@@ -105,8 +105,11 @@ void EthStratumClient::reconnect()
 		p_worktimer = nullptr;
 	}
 
-	m_io_service.reset();
-	m_socket.close(); // leads to crashes on Linux
+	// m_io_service.reset();
+	// m_socket.close(); // leads to crashes on Linux
+	disconnect();
+	return;
+
 
 	m_authorized = false;
 	m_connected = false;

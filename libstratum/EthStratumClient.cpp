@@ -1,4 +1,4 @@
- 
+
 #include "EthStratumClient.h"
 #include <libdevcore/Log.h>
 #include <libethash/endian.h>
@@ -48,7 +48,7 @@ EthStratumClient::EthStratumClient(Farm* f, MinerType m, string const & host, st
 	m_email = email;
 
 	m_submit_hashrate_id = h256::random().hex();
-	
+
 	p_farm = f;
 	p_worktimer = nullptr;
 	connect();
@@ -77,7 +77,7 @@ void EthStratumClient::connect()
 {
 	tcp::resolver r(m_io_service);
 	tcp::resolver::query q(p_active->host, p_active->port);
-	
+
 	r.async_resolve(q, boost::bind(&EthStratumClient::resolve_handler,
 					this, boost::asio::placeholders::error,
 					boost::asio::placeholders::iterator));
@@ -96,7 +96,7 @@ void EthStratumClient::connect()
 	}
 }
 
-#define BOOST_ASIO_ENABLE_CANCELIO 
+#define BOOST_ASIO_ENABLE_CANCELIO
 
 void EthStratumClient::reconnect()
 {
@@ -106,10 +106,13 @@ void EthStratumClient::reconnect()
 	}
 
 	m_io_service.reset();
-	//m_socket.close(); // leads to crashes on Linux
+	if(m_socket != nullptr){
+	  m_socket.close(); // leads to crashes on Linux
+	}
+
 	m_authorized = false;
 	m_connected = false;
-		
+
 	if (!m_failover.host.empty())
 	{
 		m_retries++;
@@ -130,7 +133,7 @@ void EthStratumClient::reconnect()
 			m_retries = 0;
 		}
 	}
-	
+
 	cnote << "Reconnecting in 3 seconds...";
 	boost::asio::deadline_timer timer(m_io_service, boost::posix_time::seconds(3));
 	timer.wait();
@@ -170,7 +173,7 @@ void EthStratumClient::resolve_handler(const boost::system::error_code& ec, tcp:
 void EthStratumClient::connect_handler(const boost::system::error_code& ec, tcp::resolver::iterator i)
 {
 	dev::setThreadName("stratum");
-	
+
 	if (!ec)
 	{
 		m_connected = true;
@@ -217,7 +220,7 @@ void EthStratumClient::connect_handler(const boost::system::error_code& ec, tcp:
 				os << "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"ethminer/" << ETH_PROJECT_VERSION << "\",\"EthereumStratum/1.0.0\"]}\n";
 				break;
 		}
-		
+
 		async_write(m_socket, m_requestBuffer,
 			boost::bind(&EthStratumClient::handleResponse, this,
 									boost::asio::placeholders::error));
@@ -236,9 +239,9 @@ void EthStratumClient::readline() {
 		async_read_until(m_socket, m_responseBuffer, "\n",
 			boost::bind(&EthStratumClient::readResponse, this,
 			boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-	
+
 		m_pending++;
-		
+
 	}
 	x_pending.unlock();
 }
@@ -268,7 +271,7 @@ void EthStratumClient::readResponse(const boost::system::error_code& ec, std::si
 		std::string response;
 		getline(is, response);
 
-		if (!response.empty() && response.front() == '{' && response.back() == '}') 
+		if (!response.empty() && response.front() == '{' && response.back() == '}')
 		{
 			Json::Value responseObject;
 			Json::Reader reader;
@@ -276,7 +279,7 @@ void EthStratumClient::readResponse(const boost::system::error_code& ec, std::si
 			{
 				processReponse(responseObject);
 			}
-			else 
+			else
 			{
 				cwarn << "Parse response failed: " << reader.getFormattedErrorMessages();
 			}

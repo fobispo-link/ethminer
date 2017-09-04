@@ -28,7 +28,7 @@ static void diffToTarget(uint32_t *target, double diff)
 
 
 EthStratumClientV2::EthStratumClientV2(Farm* f, MinerType m, string const & host, string const & port, string const & user, string const & pass, int const & retries, int const & worktimeout, int const & protocol, string const & email)
-	: Worker("stratum"), 
+	: Worker("stratum"),
 	  m_socket(m_io_service)
 {
 	m_minerType = m;
@@ -48,7 +48,7 @@ EthStratumClientV2::EthStratumClientV2(Farm* f, MinerType m, string const & host
 	m_email = email;
 
 	m_submit_hashrate_id = h256::random().hex();
-	
+
 	p_farm = f;
 	p_worktimer = nullptr;
 	startWorking();
@@ -72,7 +72,7 @@ void EthStratumClientV2::setFailover(string const & host, string const & port, s
 	m_failover.pass = pass;
 }
 
-void EthStratumClientV2::workLoop() 
+void EthStratumClientV2::workLoop()
 {
 	while (m_running)
 	{
@@ -82,7 +82,7 @@ void EthStratumClientV2::workLoop()
 				//m_io_service.run();
 				//boost::thread t(boost::bind(&boost::asio::io_service::run, &m_io_service));
 				connect();
-				
+
 			}
 			read_until(m_socket, m_responseBuffer, "\n");
 			std::istream is(&m_responseBuffer);
@@ -195,11 +195,14 @@ void EthStratumClientV2::reconnect()
 		p_worktimer = nullptr;
 	}
 
-	//m_io_service.reset();
-	//m_socket.close(); // leads to crashes on Linux
+	m_io_service.reset();
+	if(m_socket != nullptr){
+	  m_socket.close(); // leads to crashes on Linux
+	}
+
 	m_authorized = false;
 	m_connected = false;
-		
+
 	if (!m_failover.host.empty())
 	{
 		m_retries++;
@@ -220,7 +223,7 @@ void EthStratumClientV2::reconnect()
 			m_retries = 0;
 		}
 	}
-	
+
 	cnote << "Reconnecting in 3 seconds...";
 	boost::asio::deadline_timer     timer(m_io_service, boost::posix_time::seconds(3));
 	timer.wait();
